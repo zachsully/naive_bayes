@@ -8,13 +8,17 @@ author:              Rob Zinkov
 maintainer:          rob@zinkov.com
 -- copyright:
 -- category:
-build-type:          Simple
+build-type:          Custom
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
+custom-setup
+  setup-depends:       hakaru >= 0.3
+
 executable naive-bayes
+  hs-source-dirs:      src
   main-is:             Baseline.hs
-  -- other-modules:
+
   other-extensions:    OverloadedLists
   build-depends:       base       >=4.7    && < 5.0,
                        containers >=0.5.8,
@@ -27,5 +31,29 @@ executable naive-bayes
                        text-icu   >=0.7,
                        hakaru     >=0.3,
                        time
-  -- hs-source-dirs:
+
   default-language:    Haskell2010
+
+executable nb-hakaru
+  hs-source-dirs:      src
+  main-is:             NBHakaru.hs
+  extra-source-files:  NBSimp.hk,
+                       NBSimpOptimized.hk,
+                       NaiveBayesGibbs.hk
+  
+  other-modules:       NBSimp,
+                       NBSimpOptimized,
+                       NaiveBayesGibbs
+
+  build-depends:       base       >=4.7    && < 5.0,
+                       containers >=0.5.8,
+                       text       >=0.11   && < 1.3,
+                       vector     >=0.10,
+                       directory  >=1.2    && < 1.3,
+                       filepath   >=1.1,
+                       bytestring >=0.10,
+                       mwc-random >=0.13,
+                       text-icu   >=0.7,
+                       hakaru     >=0.3,
+                       logfloat   >=0.13,
+                       time

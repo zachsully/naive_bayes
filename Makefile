@@ -14,7 +14,7 @@ all-sandbox: data-file
 	ghc Baseline.hs -O2 $(SANDBOX_OPTIONS) -o nb # Baseline
 
 data-file:
-	bash ./download-data.sh
+	bash scripts/download-data.sh
 
 clean:
 	rm NBHakaru nb *.o *.hi nb_simp.c *.core
