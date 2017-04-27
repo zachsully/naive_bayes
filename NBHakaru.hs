@@ -41,12 +41,21 @@ foreign import ccall "gibbsC_shim"
            -> ArrayStruct Int
            -> Int
            -> IO (ArrayStruct Double)
-    
+
+foreign import ccall "gibbsCBucket_shim"
+    gibbsCBucket :: ArrayStruct Double
+           -> ArrayStruct Double
+           -> ArrayStruct Int
+           -> ArrayStruct Int
+           -> ArrayStruct Int
+           -> Int
+           -> IO (ArrayStruct Double)
+
 data ArrayType a = ArrayType Int (SV.Vector a)
   deriving (Show, Eq)
 
 getV (ArrayType _ x) = x
- 
+
 type ArrayStruct a = Ptr (ArrayType a)
 
 sizeCInt  = sizeOf    (undefined :: CInt)
@@ -59,7 +68,7 @@ withVector :: SV.Storable a
            -> IO b
 withVector v f = with (ArrayType size v) f
     where size = SV.length v
-            
+
 instance SV.Storable a => SV.Storable (ArrayType a) where
   sizeOf _ = sizeCInt
              `div` (- alignPtr_)
@@ -68,8 +77,8 @@ instance SV.Storable a => SV.Storable (ArrayType a) where
   alignment _ = sizePtr
   peek ptr    = do
       n <- peekByteOff ptr 0
-      xptr  <- peekByteOff ptr (sizeCInt                      
-                                `div` (- alignPtr_)  
+      xptr  <- peekByteOff ptr (sizeCInt
+                                `div` (- alignPtr_)
                                     * (- alignPtr_))
       xfptr <- newForeignPtr_ xptr
       let x = SV.unsafeFromForeignPtr0 xfptr n
@@ -110,17 +119,28 @@ runner
 runner numDocs k vocabSize trial = do
     g      <- MWC.createSystemRandom
     Just (z, w) <- unMeasure (generateDataset k vocabSize numDocs doc) g
---    sample <- time "" $ do
---      printf "C,%d,%d,%d,%d,\n" numDocs k vocabSize trial
---      vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
---      labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
---      withVector (G.convert vocabP) $ \vocabP' ->
---       withVector (G.convert labelP) $ \labelP' ->
---        withVector (G.convert z) $ \z' ->
---         withVector (G.convert w) $ \w' ->
---          withVector (G.convert doc) $ \doc' -> do
---           r <- gibbsC vocabP' labelP' z' w' doc' 1
---           peek r >>= print
+    sample <- time "" $ do
+      printf "C,%d,%d,%d,%d,\n" numDocs k vocabSize trial
+      vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
+      labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
+      withVector (G.convert vocabP) $ \vocabP' ->
+       withVector (G.convert labelP) $ \labelP' ->
+        withVector (G.convert z) $ \z' ->
+         withVector (G.convert w) $ \w' ->
+          withVector (G.convert doc) $ \doc' -> do
+           r <- gibbsC vocabP' labelP' z' w' doc' 1
+           peek r >>= print
+    sample <- time "" $ do
+      printf "C-Bucket,%d,%d,%d,%d,\n" numDocs k vocabSize trial
+      vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
+      labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
+      withVector (G.convert vocabP) $ \vocabP' ->
+       withVector (G.convert labelP) $ \labelP' ->
+        withVector (G.convert z) $ \z' ->
+         withVector (G.convert w) $ \w' ->
+          withVector (G.convert doc) $ \doc' -> do
+           r <- gibbsCBucket vocabP' labelP' z' w' doc' 1
+           peek r >>= print
     sample <- time "" $ do
       printf "Haskell,%d,%d,%d,%d,\n" numDocs k vocabSize trial
       vocabP <- vocabPrior vocabSize g
