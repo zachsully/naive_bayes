@@ -128,8 +128,8 @@ runner numDocs k vocabSize trial = do
         withVector (G.convert z) $ \z' ->
          withVector (G.convert w) $ \w' ->
           withVector (G.convert doc) $ \doc' -> do
-           r <- gibbsC vocabP' labelP' z' w' doc' 1
-           peek r >>= print
+           _ <- gibbsC vocabP' labelP' z' w' doc' 1
+           return ()
     sample <- time "" $ do
       printf "C-Bucket,%d,%d,%d,%d,\n" numDocs k vocabSize trial
       vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
@@ -139,8 +139,8 @@ runner numDocs k vocabSize trial = do
         withVector (G.convert z) $ \z' ->
          withVector (G.convert w) $ \w' ->
           withVector (G.convert doc) $ \doc' -> do
-           r <- gibbsCBucket vocabP' labelP' z' w' doc' 1
-           peek r >>= print
+           _ <- gibbsCBucket vocabP' labelP' z' w' doc' 1
+           return ()
     sample <- time "" $ do
       printf "Haskell,%d,%d,%d,%d,\n" numDocs k vocabSize trial
       vocabP <- vocabPrior vocabSize g
