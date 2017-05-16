@@ -123,10 +123,10 @@ runner numDocs k vocabSize trial = do
                                 labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
                                 withVector (G.convert vocabP) $ \vocabP' ->
                                   withVector (G.convert labelP) $ \labelP' ->
-                                    withVector (G.convert z) $ \z' ->
-                                      withVector (G.convert w) $ \w' ->
-                                        withVector (G.convert doc) $ \doc' ->
-                                          f vocabP' labelP' z' w' doc' 1
+                                     withVector (G.convert z) $ \z' ->
+                                        withVector (G.convert w) $ \w' ->
+                                           withVector (G.convert doc) $ \doc' ->
+                                              f vocabP' labelP' z' w' doc' 1
     sample <- runC "C" gibbsC
     sample <- runC "C Bucket" gibbsCBucket
     sample <- time "" $ do
@@ -158,7 +158,7 @@ time label m = do
   t1 <- now
   r  <- m
   t2 <- now
-  putStrLn $ filter (/= 's') (diff t1 t2)
+  printf "time: %v\n\n" (filter (/= 's') (diff t1 t2))
   return r
 
 type Time = UTCTime
