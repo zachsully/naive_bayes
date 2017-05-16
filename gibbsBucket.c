@@ -12,4 +12,3 @@ struct mdata_nat* gibbsCBucket_shim(
   *res = gibbsCBucket(*topic_prior_b, *word_prior_c, *z_d, *w_e, *doc_f, docUpdate_g);
   return res;
 }
-

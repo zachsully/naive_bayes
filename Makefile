@@ -1,9 +1,9 @@
 SANDBOX_PATH = $(shell find .cabal-sandbox -name "*-packages.conf.d")
 SANDBOX_OPTIONS = -no-user-package-db -package-db $(SANDBOX_PATH)
 
-all: data-file summary nb_simp.c
-	#gcc -O3 -c gibbs.c
-	ghc -O2 gibbs.o --make NBHakaru.hs # Haskell and C
+all: data-file summary nb_simp.c nb_simp_bucket.c
+	gcc -O3 -c gibbs.c gibbsBucket.c
+	ghc -O2 gibbs.o gibbsBucket.o --make NBHakaru.hs # Haskell and C
 	ghc Baseline.hs -O2 -o nb # Baseline
 	ghc -O2 GetNews.hs
 	ghc -O2 NaiveBayesMain.hs -o NaiveBayes
@@ -30,10 +30,10 @@ nb_simp.c: nb_simp.hk
 	hkc -F gibbsC nb_simp.hk -o nb_simp.c
 
 nb_simp_bucket.c: nb_simp.hk
-	hkc -SF gibbsCBucket nb_simp.hk -o nb_simp_bucket.c
+	hkc -SF gibbsCBucket nb_simp.hk -o nb_simp_bucket.c; perl -i -pe "s/logSumExp/logsumexp/g;" nb_simp_bucket.c
 
 clean:
-	rm NBHakaru nb *.o *.hi nb_simp.hk nb_simp.c *.core NaiveBayes GetNews words.* docs.* topics.* plots/*.pdf
+	rm NBHakaru nb *.o *.hi nb_simp.hk nb_simp.c nb_simp_bucket.c *.core NaiveBayes GetNews words.* docs.* topics.* plots/*.pdf
 
 distclean: clean
 	rm -rf 20news-19997.tar.gz 20_newsgroups
