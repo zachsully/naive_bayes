@@ -9,7 +9,6 @@ module Main where
 import           Prelude                          hiding (product, exp, log, (**))
 import           Language.Hakaru.Runtime.LogFloatPrelude
 import           Language.Hakaru.Types.Sing
-import           System.CPUTime
 import           Data.Time.Clock
 import           System.Environment
 import           System.IO.Unsafe
@@ -128,19 +127,7 @@ runner numDocs k vocabSize trial = do
         withVector (G.convert z) $ \z' ->
          withVector (G.convert w) $ \w' ->
           withVector (G.convert doc) $ \doc' -> do
-           _ <- gibbsC vocabP' labelP' z' w' doc' 1
-           return ()
-    sample <- time "" $ do
-      printf "C-Bucket,%d,%d,%d,%d,\n" numDocs k vocabSize trial
-      vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
-      labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
-      withVector (G.convert vocabP) $ \vocabP' ->
-       withVector (G.convert labelP) $ \labelP' ->
-        withVector (G.convert z) $ \z' ->
-         withVector (G.convert w) $ \w' ->
-          withVector (G.convert doc) $ \doc' -> do
-           _ <- gibbsCBucket vocabP' labelP' z' w' doc' 1
-           return ()
+           gibbsC vocabP' labelP' z' w' doc' 1
     sample <- time "" $ do
       printf "Haskell,%d,%d,%d,%d,\n" numDocs k vocabSize trial
       vocabP <- vocabPrior vocabSize g

@@ -2,15 +2,14 @@
 
 suppressMessages(library('rjags'))
 suppressMessages(library('coda'))
+suppressMessages(library('assertthat'))
+suppressMessages(library('MASS'))
 
-load("20news.Rdata")
-topics <- topics + 1
-words  <- words  + 1
-docs   <- docs   + 1
+ascending <- function (x) all(diff(x) >= 0)
 
-vocabSize <- length(unique(words))
-topicSize <- length(unique(topics))
-
+scan.file <- function (f, suffix) {
+    scan(paste(f, suffix, sep="."), quiet=TRUE) + 1
+}
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) != 2) {
@@ -20,15 +19,21 @@ if (length(args) != 2) {
 docsPerTopic <- as.numeric(args[1])
 trial        <- as.numeric(args[2])
 
-# Use docsPerTopic*topicSize documents
-trainTestSplit <- 0.9
-docIndices     <- c(sapply(0:(topicSize-1),
-                           function(i) (1000*i+1):(1000*i+docsPerTopic)))
-topics         <- topics[docIndices]
-words          <- words[docs %in% docIndices]
-docs           <- as.numeric(as.factor(docs[docs %in% docIndices]))
+topics <- scan.file("topics", docsPerTopic)
+words  <- scan.file("words",  docsPerTopic)
+docs   <- scan.file("docs",   docsPerTopic)
 
-testDocsPerTopic <- floor(docsPerTopic * (1 - trainTestSplit))
+invisible(assert_that(ascending(topics)))
+invisible(assert_that(ascending(docs)))
+
+docsSize  <- length(topics)
+topicSize <- length(unique(topics))
+vocabSize <- length(unique(words))
+
+# We take a subset of the smaller dataset to use as
+# a test set
+trainTestSplit <- fractions(9/10)
+testDocsPerTopic <- ceiling(docsPerTopic * (1 - trainTestSplit))
 topicIndices <- c(sapply(0:(topicSize-1),
                          function(i)
                            (docsPerTopic*i+1):(docsPerTopic*i+testDocsPerTopic)))
@@ -36,11 +41,9 @@ topicIndices <- c(sapply(0:(topicSize-1),
 zTrues <- topics[topicIndices]
 topics[topicIndices] <- NA
 
-start.time <- Sys.time()
-
 jags <- jags.model('naive_bayes.jags',
                    data = list('Nwords'     = length(words),
-                               'Ndocs'      = length(topics),
+                               'Ndocs'      = docsSize,
                                'Ntopics'    = topicSize,
                                'Nvocab'     = vocabSize,
                                'onesTopics' = rep(1,topicSize),
@@ -52,35 +55,27 @@ jags <- jags.model('naive_bayes.jags',
                    n.adapt = 10,
                    quiet=TRUE)
 
-start2.time <- Sys.time()
+start.time <- Sys.time()
 
 update(jags, 1);
 
 samples <- jags.samples(jags, c('z'), 1);
 zPredicts <- samples$"z"[topicIndices]
 
-end.time  <- Sys.time()
-duration  <- difftime(end.time, start.time,  units="sec")
-duration2 <- difftime(end.time, start2.time, units="sec")
+end.time <- Sys.time()
+duration <- difftime(end.time, start.time, units="sec")
 
-accuracy  <- length(zTrues[zPredicts == zTrues])/length(zTrues)
+accuracy <- length(zTrues[zPredicts == zTrues])/length(zTrues)
 
-cat("JAGS_init",
-    as.numeric(duration),
-    as.numeric(docsPerTopic*20),
-    format(accuracy),
-    format(trial),
-    sep=",",
-    fill=TRUE)
 cat("JAGS",
-    as.numeric(duration2),
-    as.numeric(docsPerTopic*20),
-    format(accuracy),
+    as.numeric(docsSize),
     format(trial),
-    sep=",",
-    fill=TRUE)
+    format(accuracy),
+    as.numeric(duration),
+    sep=",")
+cat(",")
 
-#print(zPredicts)
-#print(zTrues)
+## print(zPredicts)
+## print(zTrues)
 
 }
