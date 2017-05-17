@@ -1,7 +1,7 @@
 SANDBOX_PATH = $(shell find .cabal-sandbox -name "*-packages.conf.d")
 SANDBOX_OPTIONS = -no-user-package-db -package-db $(SANDBOX_PATH)
 
-all: data-file summary nb_simp.c nb_simp_bucket.c
+all: data-file summary compile nb_simp.c nb_simp_bucket.c
 	gcc -O3 -c gibbs.c gibbsBucket.c
 	ghc -O2 gibbs.o gibbsBucket.o --make NBHakaru.hs # Haskell and C
 	ghc Baseline.hs -O2 -o nb # Baseline
@@ -20,6 +20,9 @@ data-file:
 
 summary: nb_simp.hk
 	summary nb_simp.hk -o GibbsOptBucket.hs -M GibbsOptBucket --logfloat-prelude
+
+compile: nb_simp.hk
+	compile nb_simp.hk -o Gibbs.hs -M Gibbs --logfloat-prelude
 
 nb_simp.hk:
 	simplify naive_bayes_gibbs.hk > nb_simp.hk

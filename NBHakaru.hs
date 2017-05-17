@@ -28,8 +28,7 @@ import           Foreign.Ptr                      (Ptr,nullPtr)
 import           Foreign.Storable
 import           Text.Printf
 
-import Gibbs
-import GibbsOpt
+import qualified Gibbs
 import qualified GibbsOptBucket
 
 foreign import ccall "gibbsC_shim"
@@ -118,7 +117,8 @@ runner
 runner numDocs k vocabSize trial = do
     g      <- MWC.createSystemRandom
     Just (z, w) <- unMeasure (generateDataset k vocabSize numDocs doc) g
-    let runC s f = time "" $ do printf "%s,%d,%d,%d,%d,\n" s numDocs k vocabSize trial
+    -- printf "name,num_docs,k,vocab_size,iter\n"
+    let runC s f = time "" $ do printf "%s " s -- numDocs k vocabSize trial
                                 vocabP <- G.map LF.logFromLogFloat <$> vocabPrior vocabSize g
                                 labelP <- G.map LF.logFromLogFloat <$> labelPrior k g
                                 withVector (G.convert vocabP) $ \vocabP' ->
@@ -127,20 +127,17 @@ runner numDocs k vocabSize trial = do
                                         withVector (G.convert w) $ \w' ->
                                            withVector (G.convert doc) $ \doc' ->
                                               f vocabP' labelP' z' w' doc' 1
-    sample <- runC "C" gibbsC
-    sample <- runC "C Bucket" gibbsCBucket
+    sample <- runC "HKC        " gibbsC
+    sample <- runC "HKC-buckets" gibbsCBucket
     sample <- time "" $ do
-      printf "Haskell,%d,%d,%d,%d,\n" numDocs k vocabSize trial
+      printf       "Haskell    " -- numDocs k vocabSize trial
       vocabP <- vocabPrior vocabSize g
       labelP <- labelPrior k g
-      print (G.length $ gibbs (G.convert vocabP) (G.convert labelP) z w doc 1)
+      Just _ <- flip unMeasure g $
+                     Gibbs.prog (G.convert vocabP) (G.convert labelP) z w doc 1
+      return ()
     sample <- time "" $ do
-      printf "Haskell-Opt,%d,%d,%d,%d,\n" numDocs k vocabSize trial
-      vocabP <- vocabPrior vocabSize g
-      labelP <- labelPrior k g
-      print (G.length $ gibbsOpt (G.convert vocabP) (G.convert labelP) z w doc 1)
-    sample <- time "" $ do
-      printf "Haskell-Opt-Bucket,%d,%d,%d,%d,\n" numDocs k vocabSize trial
+      printf       "Haskell-bk " -- numDocs k vocabSize trial
       vocabP <- vocabPrior vocabSize g
       labelP <- labelPrior k g
       Just _ <- flip unMeasure g $
@@ -158,7 +155,7 @@ time label m = do
   t1 <- now
   r  <- m
   t2 <- now
-  printf "time: %v\n\n" (filter (/= 's') (diff t1 t2))
+  printf "time: %v\n" (filter (/= 's') (diff t1 t2))
   return r
 
 type Time = UTCTime
