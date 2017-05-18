@@ -30,10 +30,10 @@ nb_simp.hk:
 	mv nb_simp2.hk nb_simp.hk
 
 nb_simp.c: nb_simp.hk
-	hkc -F gibbsC nb_simp.hk -o nb_simp.c
+	hkc -OF gibbsC nb_simp.hk -o nb_simp.c
 
 nb_simp_bucket.c: nb_simp.hk
-	hkc -SF gibbsCBucket nb_simp.hk -o nb_simp_bucket.c; perl -i -pe "s/logSumExp/logsumexp/g;" nb_simp_bucket.c
+	hkc -OSF gibbsCBucket nb_simp.hk -o nb_simp_bucket.c; perl -i -pe "s/logSumExp/logsumexp/g;" nb_simp_bucket.c
 
 clean:
 	rm NBHakaru nb *.o *.hi nb_simp.hk nb_simp.c nb_simp_bucket.c *.core NaiveBayes GetNews words.* docs.* topics.* plots/*.pdf
