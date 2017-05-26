@@ -4,9 +4,9 @@ SANDBOX_OPTIONS = -no-user-package-db -package-db $(SANDBOX_PATH)
 all: data-file summary compile nb_simp.c nb_simp_bucket.c
 	gcc -O3 -c gibbs.c gibbsBucket.c
 	ghc -O2 gibbs.o gibbsBucket.o --make NBHakaru.hs # Haskell and C
-	ghc Baseline.hs -O2 -o nb # Baseline
-	ghc -O2 GetNews.hs
-	ghc -O2 NaiveBayesMain.hs -o NaiveBayes
+	# ghc Baseline.hs -O2 -o nb # Baseline
+	# ghc -O2 GetNews.hs
+	# ghc -O2 NaiveBayesMain.hs -o NaiveBayes
 
 all-sandbox: data-file summary nb_simp.c
 	#gcc -O3 -g -c gibbs.c
@@ -30,10 +30,10 @@ nb_simp.hk:
 	mv nb_simp2.hk nb_simp.hk
 
 nb_simp.c: nb_simp.hk
-	hkc -OF gibbsC nb_simp.hk -o nb_simp.c
+	hkc -O1 -F gibbsC nb_simp.hk -o nb_simp.c
 
 nb_simp_bucket.c: nb_simp.hk
-	hkc -OSF gibbsCBucket nb_simp.hk -o nb_simp_bucket.c; perl -i -pe "s/logSumExp/logsumexp/g;" nb_simp_bucket.c
+	hkc -O1 -S -F gibbsCBucket nb_simp.hk -o nb_simp_bucket.c; perl -i -pe "s/logSumExp/logsumexp/g;" nb_simp_bucket.c
 
 clean:
 	rm NBHakaru nb *.o *.hi nb_simp.hk nb_simp.c nb_simp_bucket.c *.core NaiveBayes GetNews words.* docs.* topics.* plots/*.pdf
